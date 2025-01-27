@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recover RHS Video Metadata Tool</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin: 20px 0;
+            color: #444;
+        }
+
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            color: #fff;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #connectButton {
+            background-color: #007bff;
+            color: white;
+        }
+
+        #disconnectButton {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        input[type="file"] {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 80%;
+        }
+
+        video {
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 80%;
+            min-height: 150px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #SaveNMEAButton {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .info {
+            background-color: #d1ecf1; 
+            color: #0c5460; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+        }
+
+        .error {
+            background-color: #f8d7da; 
+            color: #721c24; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Recover RHS Video Metadata Tool</h1>
+    <button id="connectButton">Connect RHS Decoder</button>
+    <button id="disconnectButton">Disconnect RHS Decoder</button>
+    <div id="message"></div>
+    <input type="file" accept="video/*" />
+    <video controls autoplay id="myvideo" width="400" height="300"></video>
+    <textarea readonly id="NMEA" rows="10" cols="100"></textarea>
+    <button id="SaveNMEAButton">Save NMEA File</button>
+	
+<script>
+
+if ("serial" in navigator) {
+  console.log("web serial api is supported");
+  let port;
+  let reader;
+  let keepReading = true;
+  let LoadedVideo;
+  let NMEABuffer = "";
+
+
+async function connectAndRead() {
+  try {    
+	const port = await navigator.serial.requestPort();
+	console.log(port);
+    if (!port) {
+      console.error("COM not found");
+      return;
+    }
+
+    await port.open({ baudRate: 9600 });
+
+    const textDecoder = new TextDecoderStream();
+    const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+    reader = textDecoder.readable.getReader();
+
+    while (keepReading) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }	  
+	  NMEABuffer += value;	  
+	  let ind1 = NMEABuffer.indexOf("$");
+	  let ind2 = NMEABuffer.indexOf("$", ind1 + 1);	  
+	  if (ind1 != -1 && ind2 != -1){
+		let subs = NMEABuffer.substring(ind1,ind2);
+		NMEABuffer = NMEABuffer.substring(ind2);
+		document.getElementById("NMEA").innerHTML += subs;
+	  }	    	  
+    }
+    reader.releaseLock();
+    await port.close();
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+function calculateCS(data) {
+    let cs = 0;
+   
+    for (let i = 0; i < data.length; i++) {        
+        cs ^= data.charCodeAt(i);       
+        }    
+    return cs.toString(16).toUpperCase();
+}
+
+(function localFileVideoPlayer() {
+  "use strict"
+  let URL = window.URL || window.webkitURL
+  
+  let displayMessage = function (message, isError) {
+    let element = document.querySelector("#message")
+    element.innerHTML = message
+    element.className = isError ? "error" : "info"
+  }
+  
+  let playSelectedFile = function (event) {
+    let file = this.files[0]
+	LoadedVideo = file.name
+    let type = file.type
+    let videoNode = document.querySelector("video")
+    let canPlay = videoNode.canPlayType(type)
+	
+    if (canPlay === "") canPlay = "no"
+	
+    let message = 'Can play type "' + type + '": ' + canPlay
+    let isError = canPlay === "no"
+    displayMessage(message, isError)
+
+    if (isError) {
+      return
+    }
+
+    let fileURL = URL.createObjectURL(file)
+    videoNode.src = fileURL
+  }
+
+  let inputNode = document.querySelector("input")
+  inputNode.addEventListener("change", playSelectedFile, false)
+})()
+
+function changeFileExtension(fileName, newExtension) {
+  const lastDotIndex = fileName.lastIndexOf('.');
+  if (lastDotIndex !== -1) {
+    return fileName.substring(0, lastDotIndex) + newExtension;
+  } else {
+    return fileName + newExtension;
+  }
+}
+
+function savenmeafile() {
+	const link = document.querySelector('a.simple');
+	
+	let filename = changeFileExtension(LoadedVideo,'.nmea');
+	let content =  document.getElementById("NMEA").value;
+	
+    let blob = new Blob([content], {type: 'text/plain'});
+	let file = new File([blob], filename);
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { 
+        let a = document.createElement("a"),
+                url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);  
+        }, 0); 
+    }
+}
+
+document.getElementById("myvideo").addEventListener('timeupdate', function() {
+    let hours = Math.floor(this.currentTime / 3600);
+    let minutes = Math.floor((this.currentTime - (hours * 3600)) / 60);
+    let seconds = Math.floor(this.currentTime - (hours * 3600) - (minutes * 60));
+    let millisec = Math.floor((this.currentTime - (hours * 3600) - (minutes * 60) - seconds) * 1000)
+
+    let timeString = 
+        hours.toString().padStart(2, '0') + ':' +
+        minutes.toString().padStart(2, '0') + ':' +
+        seconds.toString().padStart(2, '0') + ':' +
+        millisec.toString();
+    
+    let data = "PRHS,VTC_,+" + timeString +",02";
+    let csValue = calculateCS(data).toString().padStart(2, '0');
+    let prhs = "$"+data+"*"+csValue;
+
+    document.getElementById("NMEA").innerHTML+=prhs;
+    document.getElementById("NMEA").innerHTML+="\n";
+})
+
+async function disconnect() {
+  keepReading = false;
+  if (reader) {
+    await reader.cancel();
+  }
+}
+document.getElementById('connectButton').addEventListener('click', connectAndRead);
+document.getElementById('disconnectButton').addEventListener('click', disconnect);
+document.getElementById('SaveNMEAButton').addEventListener('click',savenmeafile);
+
+}
+else{
+console.log("web serial api is not supported");
+
+let msg = "This Browser is not supported. Try Chrome or Edge.";
+let elmnt = document.querySelector("#message")
+    elmnt.innerHTML = msg
+document.getElementById('connectButton').disabled=true;
+}
+
+</script>	
+</body>
+</html>

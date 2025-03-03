@@ -6,272 +6,377 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recover RHS Video Metadata Tool</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            line-height: 1.6;
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 2rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
         h1 {
-            font-size: 2rem;
-            margin: 20px 0;
-            color: #444;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            text-align: center;
         }
 
-        button {
-            margin: 10px;
-            padding: 12px 24px;
-            font-size: 16px;
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: all 0.3s ease;
+            margin: 0 0.5rem;
         }
 
-        button:hover {
-            background-color: #0056b3;
-            color: #fff;
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
         }
 
-        button:disabled {
-            background-color: #ccc;
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            background-color: var(--secondary-color);
             cursor: not-allowed;
         }
 
-        #connectButton {
-            background-color: #007bff;
-            color: white;
+        .file-input {
+            margin-bottom: 1rem;
+            width: 100%;
         }
 
-        #disconnectButton {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        input[type="file"] {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            width: 80%;
-        }
-
-        video {
-            margin-top: 20px;
+        .video-player {
+            width: 100%;
+            max-width: 800px;
             border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
         }
 
-        textarea {
-            margin-top: 20px;
-            padding: 10px;
+        .textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 0.75rem;
             border-radius: 5px;
             border: 1px solid #ddd;
-            width: 80%;
-            min-height: 150px;
             font-family: 'Courier New', Courier, monospace;
+            resize: vertical;
         }
 
-        #SaveNMEAButton {
-            background-color: #28a745;
-            color: white;
+        .playlist {
+            list-style: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
 
-        .info {
-            background-color: #d1ecf1; 
-            color: #0c5460; 
-            padding: 10px; 
-            border-radius: 5px; 
-            margin-top: 20px; 
+        .playlist li {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
         }
 
-        .error {
-            background-color: #f8d7da; 
-            color: #721c24; 
-            padding: 10px; 
-            border-radius: 5px; 
-            margin-top: 20px; 
+        .playlist li:hover {
+            background-color: #f0f0f0;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -1rem;
+        }
+
+        .column {
+            flex: 1;
+            padding: 1rem;
+        }
+
+        .column-75 {
+            flex-basis: 75%;
+        }
+
+        .column-25 {
+            flex-basis: 25%;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+
+        .message-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .message-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        @media screen and (max-width: 768px) {
+            .row {
+                flex-direction: column;
+            }
+
+            .column {
+                flex-basis: 100%;
+            }
         }
     </style>
 </head>
 
 <body>
-    <h1>Recover RHS Video Metadata Tool</h1>
-    <button id="connectButton">Connect RHS Decoder</button>
-    <button id="disconnectButton">Disconnect RHS Decoder</button>
-    <div id="message"></div>
-    <input type="file" accept="video/*" />
-    <video controls autoplay id="myvideo" width="400" height="300"></video>
-    <textarea readonly id="NMEA" rows="10" cols="100"></textarea>
-    <button id="SaveNMEAButton">Save NMEA File</button>
-	
+    <div class="container">
+        <h1>Recover RHS Video Metadata Tool</h1>
+        
+        <div class="btn-group">
+            <button id="connectButton" class="btn btn-primary">Connect RHS Decoder</button>
+            <button id="disconnectButton" class="btn btn-danger">Disconnect RHS Decoder</button>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="row">
+            <div class="column column-75">
+                <input type="file" id="fileInput" class="file-input" multiple accept="video/*">
+                <video controls autoplay id="videoPlayer" class="video-player"></video>
+                <textarea readonly id="NMEA" class="textarea" placeholder="NMEA data will appear here..."></textarea>
+            </div>
+            <div class="column column-25">
+                <ul id="playlist" class="playlist"></ul>
+            </div>
+        </div>
+    </div>
 <script>
 
 if ("serial" in navigator) {
-  console.log("web serial api is supported");
-  let port;
-  let reader;
-  let keepReading = true;
-  let LoadedVideo;
-  let NMEABuffer = "";
+    console.log("web serial api is supported");
+    let port;
+    let reader;
+    let keepReading = true;
+    let LoadedVideo;
 
+    let NMEABuffer = "";
 
-async function connectAndRead() {
-  try {    
-	const port = await navigator.serial.requestPort();
-	console.log(port);
-    if (!port) {
-      console.error("COM not found");
-      return;
+	let LastNMEAVTC = "";
+    let CurNMEAVTC = "";
+
+    let CurVTC_sec = 0.0;
+    let LastVTC_sec = 0.0;
+    let videoPlayerDelta = 0.01;
+
+	const GEM_meta_arr = [""];
+	GEM_meta_arr.shift();
+	
+    const fileInput = document.getElementById('fileInput');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const NMEA = document.getElementById('NMEA');
+    const playlist = document.getElementById('playlist');
+    let videos = [];
+    let currentVideoIndex = 0;
+
+    fileInput.addEventListener('change', (e) => {
+        videos = Array.from(e.target.files);
+        updatePlaylist();
+        loadVideo(0);
+    });
+
+    function updatePlaylist() {
+        playlist.innerHTML = '';
+        videos.forEach((video, index) => {
+            const li = document.createElement('li');
+            li.textContent = video.name;
+            li.onclick = () => loadVideo(index);
+            playlist.appendChild(li);
+        });
     }
 
-    await port.open({ baudRate: 9600 });
-
-    const textDecoder = new TextDecoderStream();
-    const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
-    reader = textDecoder.readable.getReader();
-
-    while (keepReading) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
-      }	  
-	  NMEABuffer += value;	  
-	  let ind1 = NMEABuffer.indexOf("$");
-	  let ind2 = NMEABuffer.indexOf("$", ind1 + 1);	  
-	  if (ind1 != -1 && ind2 != -1){
-		let subs = NMEABuffer.substring(ind1,ind2);
-		NMEABuffer = NMEABuffer.substring(ind2);
-		document.getElementById("NMEA").innerHTML += subs;
-	  }	    	  
-    }
-    reader.releaseLock();
-    await port.close();
-  } catch (error) {
-    console.error("Error:", error);
-  }
-}
-
-function calculateCS(data) {
-    let cs = 0;
-   
-    for (let i = 0; i < data.length; i++) {        
-        cs ^= data.charCodeAt(i);       
-        }    
-    return cs.toString(16).toUpperCase();
-}
-
-(function localFileVideoPlayer() {
-  "use strict"
-  let URL = window.URL || window.webkitURL
-  
-  let displayMessage = function (message, isError) {
-    let element = document.querySelector("#message")
-    element.innerHTML = message
-    element.className = isError ? "error" : "info"
-  }
-  
-  let playSelectedFile = function (event) {
-    let file = this.files[0]
-	LoadedVideo = file.name
-    let type = file.type
-    let videoNode = document.querySelector("video")
-    let canPlay = videoNode.canPlayType(type)
-	
-    if (canPlay === "") canPlay = "no"
-	
-    let message = 'Can play type "' + type + '": ' + canPlay
-    let isError = canPlay === "no"
-    displayMessage(message, isError)
-
-    if (isError) {
-      return
+    function loadVideo(index) {
+        if (index >= 0 && index < videos.length) {
+            currentVideoIndex = index;
+            LoadedVideo = videos[currentVideoIndex];
+            console.log(LoadedVideo);
+            videoPlayer.src = URL.createObjectURL(LoadedVideo);
+            eraseText();
+            videoPlayer.play();
+        }
     }
 
-    let fileURL = URL.createObjectURL(file)
-    videoNode.src = fileURL
-  }
+    videoPlayer.addEventListener('ended', () => {
+        savenmeafile();
+        currentVideoIndex++;
+        if (currentVideoIndex < videos.length) {
+            loadVideo(currentVideoIndex);
+        }
+    });
 
-  let inputNode = document.querySelector("input")
-  inputNode.addEventListener("change", playSelectedFile, false)
-})()
+    function ConvertVTC_to_NMEA(vtc_sec) {
+        let hours = Math.floor(vtc_sec / 3600);
+        let minutes = Math.floor((vtc_sec - (hours * 3600)) / 60);
+        let seconds = Math.floor(vtc_sec - (hours * 3600) - (minutes * 60));
+        let subsec = Math.floor((vtc_sec - (hours * 3600) - (minutes * 60) - seconds) * 100)
 
-function changeFileExtension(fileName, newExtension) {
-  const lastDotIndex = fileName.lastIndexOf('.');
-  if (lastDotIndex !== -1) {
-    return fileName.substring(0, lastDotIndex) + newExtension;
-  } else {
-    return fileName + newExtension;
-  }
-}
-
-function savenmeafile() {
-	const link = document.querySelector('a.simple');
-	
-	let filename = changeFileExtension(LoadedVideo,'.nmea');
-	let content =  document.getElementById("NMEA").value;
-	
-    let blob = new Blob([content], {type: 'text/plain'});
-	let file = new File([blob], filename);
-    if (window.navigator.msSaveOrOpenBlob) // IE10+
-        window.navigator.msSaveOrOpenBlob(file, filename);
-    else { 
-        let a = document.createElement("a"),
-                url = URL.createObjectURL(file);
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() {
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);  
-        }, 0); 
+        let timeString = 
+            hours.toString().padStart(2, '0') + ':' +
+            minutes.toString().padStart(2, '0') + ':' +
+            seconds.toString().padStart(2, '0') + ':' +
+            subsec.toString().padStart(2, '0');
+        
+        let data = "PRHS,VTC_,+" + timeString +",02";
+        let csValue = calculateCS(data).toString().padStart(2, '0');
+        let prhs = "$"+data+"*"+csValue;            
+        return prhs;
     }
-}
 
-document.getElementById("myvideo").addEventListener('timeupdate', function() {
-    let hours = Math.floor(this.currentTime / 3600);
-    let minutes = Math.floor((this.currentTime - (hours * 3600)) / 60);
-    let seconds = Math.floor(this.currentTime - (hours * 3600) - (minutes * 60));
-    let millisec = Math.floor((this.currentTime - (hours * 3600) - (minutes * 60) - seconds) * 1000)
+    function eraseText() {
+        NMEABuffer = "";
+        NMEA.innerHTML = "";
+    }
 
-    let timeString = 
-        hours.toString().padStart(2, '0') + ':' +
-        minutes.toString().padStart(2, '0') + ':' +
-        seconds.toString().padStart(2, '0') + ':' +
-        millisec.toString();
-    
-    let data = "PRHS,VTC_,+" + timeString +",02";
-    let csValue = calculateCS(data).toString().padStart(2, '0');
-    let prhs = "$"+data+"*"+csValue;
+    async function connectAndRead() {
+        try {    
+            const port = await navigator.serial.requestPort();
+            console.log(port);
+            if (!port) {
+                console.error("COM not found");
+            return;
+        }
 
-    document.getElementById("NMEA").innerHTML+=prhs;
-    document.getElementById("NMEA").innerHTML+="\n";
-})
+        await port.open({ baudRate: 9600 });
 
-async function disconnect() {
-  keepReading = false;
-  if (reader) {
-    await reader.cancel();
-  }
-}
-document.getElementById('connectButton').addEventListener('click', connectAndRead);
-document.getElementById('disconnectButton').addEventListener('click', disconnect);
-document.getElementById('SaveNMEAButton').addEventListener('click',savenmeafile);
+        const textDecoder = new TextDecoderStream();
+        const readableStreamClosed = port.readable.pipeTo(textDecoder.writable);
+        reader = textDecoder.readable.getReader();
 
+        while (keepReading) {
+            const { value, done } = await reader.read();
+            if (done) {
+                break;
+            }	  
+            NMEABuffer += value;	  
+	        let ind1 = NMEABuffer.indexOf("$");
+	        let ind2 = NMEABuffer.indexOf("$", ind1 + 1);	  
+            if (ind1 != -1 && ind2 != -1){
+                let GEM_meta = NMEABuffer.substring(ind1,ind2);
+                NMEABuffer = NMEABuffer.substring(ind2);	
+				let tmp_vtc_sec = videoPlayer.currentTime;   
+				NMEA.innerHTML += ConvertVTC_to_NMEA(tmp_vtc_sec);
+				NMEA.innerHTML += "\n";
+				NMEA.innerHTML += GEM_meta;
+				NMEA.scrollTop = NMEA.scrollHeight;					
+	        }	    	  
+            }
+        reader.releaseLock();
+        await port.close();
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    async function disconnect() {
+      keepReading = false;
+      if (reader) {
+        await reader.cancel();
+      }
+    }
+
+    function calculateCS(data) {
+        let cs = 0;
+       
+        for (let i = 0; i < data.length; i++) {        
+            cs ^= data.charCodeAt(i);       
+            }    
+        return cs.toString(16).toUpperCase();
+    }   
+
+    function changeFileExtension(fileName, newExtension) {
+        const lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex !== -1) {
+            return fileName.substring(0, lastDotIndex) + newExtension;
+        } else {
+            return fileName + newExtension;
+        }
+    }
+
+    function savenmeafile() {
+	    const link = document.querySelector('a.simple');
+	    
+	    let filename = changeFileExtension(LoadedVideo.name,'.nmea');
+	    let content =  document.getElementById("NMEA").value;
+	    
+        let blob = new Blob([content], {type: 'text/plain'});
+	    let file = new File([blob], filename);
+        if (window.navigator.msSaveOrOpenBlob) // IE10+
+            window.navigator.msSaveOrOpenBlob(file, filename);
+        else { 
+            let a = document.createElement("a"),
+                    url = URL.createObjectURL(file);
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function() {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);  
+            }, 0); 
+        }
+    }
+
+    document.getElementById('connectButton').addEventListener('click', connectAndRead);
+    document.getElementById('disconnectButton').addEventListener('click', disconnect);
+    //document.getElementById('SaveNMEAButton').addEventListener('click',savenmeafile);
 }
 else{
-console.log("web serial api is not supported");
-
-let msg = "This Browser is not supported. Try Chrome or Edge.";
-let elmnt = document.querySelector("#message")
-    elmnt.innerHTML = msg
-document.getElementById('connectButton').disabled=true;
+    alert("web serial api is not supported\nThis Browser is not supported. Try Chrome or Edge.");
+    console.log("web serial api is not supported");
+    let msg = "This Browser is not supported. Try Chrome or Edge.";
+    let elmnt = document.querySelector("#message");
+    elmnt.innerHTML = msg;
+    document.getElementById('connectButton').disabled = true;
 }
 
 </script>	
